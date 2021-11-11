@@ -1,37 +1,22 @@
-## Welcome to GitHub Pages
+# us3utils
+Utils scripts UltraScan III 4.0
 
-You can use the [editor on GitHub](https://github.com/doluk/us3utils/edit/main/docs/index.md) to maintain and preview the content for your website in Markdown files.
+### requirements
+pyhton 3.9.5
+pandas ~ 1.3.4
+mysql-connector-python==8.0.24
 
-Whenever you commit to this repository, GitHub Pages will run [Jekyll](https://jekyllrb.com/) to rebuild the pages in your site, from the content in your Markdown files.
-
-### Markdown
-
-Markdown is a lightweight and easy-to-use syntax for styling your writing. It includes conventions for
-
-```markdown
-Syntax highlighted code block
-
-# Header 1
-## Header 2
-### Header 3
-
-- Bulleted
-- List
-
-1. Numbered
-2. List
-
-**Bold** and _Italic_ and `Code` text
-
-[Link](url) and ![Image](src)
+## fetch_model_xmls.py
+Utils program for fetching model xmls for a given search string from the database. Useable directly from the commandline, but supports also input.
+Necessary input values: GUID of the person, passwort of the person, ID of the person and search string.
+```bash
+python fetch_model_xmls.py GUID passwort ID search_string
 ```
+Before using the database connection values have to be changed!
 
-For more details see [Basic writing and formatting syntax](https://docs.github.com/en/github/writing-on-github/getting-started-with-writing-and-formatting-on-github/basic-writing-and-formatting-syntax).
-
-### Jekyll Themes
-
-Your Pages site will use the layout and styles from the Jekyll theme you have selected in your [repository settings](https://github.com/doluk/us3utils/settings/pages). The name of this theme is saved in the Jekyll `_config.yml` configuration file.
-
-### Support or Contact
-
-Having trouble with Pages? Check out our [documentation](https://docs.github.com/categories/github-pages-basics/) or [contact support](https://support.github.com/contact) and we’ll help you sort it out.
+## merge_model_xmls.py
+Utils program for merging multiple model xmls in a given directory and creating a new model xml. Useable directly from the commandline, but supports also input.
+Necessary input values: directory
+```bash
+python merge_model_xmls.py
+```
