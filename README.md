@@ -18,5 +18,5 @@ Before using the database connection values have to be changed!
 Utils program for merging multiple model xmls in a given directory and creating a new model xml. Useable directly from the commandline, but supports also input.
 Necessary input values: directory
 ```bash
-python merg_model_xmls.py
+python merge_model_xmls.py
 ```
