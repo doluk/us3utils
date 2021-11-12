@@ -37,10 +37,10 @@ for filename in os.listdir(dirname):
     # read model variance
     try:
         metadata = pd.read_xml(os.path.join(dirname,filename), xpath='//ModelData/model')
-    except:
-        pass
+    except Exception as e:
+        traceback.print_exc()
+        raise e
     #max_var = max(max_var, metadata.variance.max())
-exit(1)
 # concatenate
 df = pd.concat(dfs, axis=0)
 print('finished importing data. starting to find unique analytes')
