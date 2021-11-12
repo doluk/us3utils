@@ -5,9 +5,21 @@ import sys
 import os
 
 
-colnames = ['analyte name', 'mw','s','D','f','f_f0','vbar20','extinction','axial','sigma','delta',
-            'oligomer','shape','type','molar','signal']
-aggregations = {col: 'mean' for col in ('mw','D','f','extinction','axial','sigma','delta','oligomer','shape','type','molar')}
+def dump_xml(df_out, name):
+    fake_analyte_names = ['SC{:04d}'.format(i) for i in range(1, df_out.shape[0] + 1)]
+    df_out['analyte name'] = fake_analyte_names
+    xml = df_out[colnames].rename({'analyte name': 'name'}, axis=1) \
+        .to_xml(index=False, row_name='analyte', root_name='model', attr_cols=['name'] + colnames[1:])
+    xml = header + xml[46:] + '\n</ModelData>'
+
+    with open(os.path.join(dirname, f'{name}.xml'), 'w+') as outfile:
+        outfile.write(xml)
+
+
+colnames = ['analyte name', 'mw', 's', 'D', 'f', 'f_f0', 'vbar20', 'extinction', 'axial', 'sigma', 'delta',
+            'oligomer', 'shape', 'type', 'molar', 'signal']
+aggregations = {col: 'mean' for col in
+                ('mw', 'D', 'f', 'extinction', 'axial', 'sigma', 'delta', 'oligomer', 'shape', 'type', 'molar')}
 aggregations['signal'] = 'sum'
 dfs = []
 
@@ -16,9 +28,9 @@ if len(sys.argv) != 2:
 else:
     dir_input = sys.argv[1]
 dir = os.path.dirname(__file__)
-dirname = os.path.join(dir,dir_input)
-
-header=''
+dirname = os.path.join(dir, dir_input)
+metadata = []
+header = ''
 max_var = 0
 print(f'{len(os.listdir(dirname))} files found, start reading')
 for filename in os.listdir(dirname):
@@ -26,29 +38,32 @@ for filename in os.listdir(dirname):
         continue
     # read first file header
     if not header:
-        with open(os.path.join(dirname,filename)) as infile:
+        with open(os.path.join(dirname, filename)) as infile:
             header = '\n'.join(infile.readlines()[:4])
     # read analytes
     try:
-        dfs.append(pd.read_xml(os.path.join(dirname,filename), xpath='//ModelData/model/analyte'))
+        model_xml = pd.read_xml(os.path.join(dirname, filename), xpath='//ModelData/model/analyte')
+        dfs.append(model_xml)
     except Exception as e:
         traceback.print_exc()
         raise e
     # read model variance
     try:
-        metadata = pd.read_xml(os.path.join(dirname,filename), xpath='//ModelData/model')
+        x = pd.read_xml(os.path.join(dirname, filename), xpath='//ModelData/model')
+        metadata.append(x)
     except Exception as e:
         traceback.print_exc()
         raise e
-    #max_var = max(max_var, metadata.variance.max())
+metadata = pd.concat(metadata,axis=0)
+max_var = metadata.variance.max()
 # concatenate
 df = pd.concat(dfs, axis=0)
 print('finished importing data. starting to find unique analytes')
 # aggregate by s, f_f0, vbar20
-df_out = df.groupby(by=['s','f_f0','vbar20'],sort=False).agg(aggregations).reset_index(drop=False)
+df_out = df.groupby(by=['s', 'f_f0', 'vbar20'], sort=False).agg(aggregations).reset_index(drop=False)
+df_out['signal'] = df_out['signal'] / metadata.shape[0]
 fake_analyte_names = ['SC{:04d}'.format(i) for i in range(1, df_out.shape[0] + 1)]
 df_out['analyte name'] = fake_analyte_names
-
 header = header.split('variance="')
 header = header[0] + f'variance="{max_var}' + header[1][header[1].index('"'):]
 print('start dumping to xml')
