@@ -15,8 +15,16 @@ python fetch_model_xmls.py GUID passwort ID search_string
 Before using the database connection values have to be changed!
 
 ## merge_model_xmls.py
-Utils program for merging multiple model xmls in a given directory and creating a new model xml. Useable directly from the commandline, but supports also input.
+Utils program for merging multiple model xmls in a given directory and creating a new model xml and a c(s,ff0) file in style of sedfit (pending). Useable directly from the commandline, but supports also input.
 Necessary input values: directory
 ```bash
 python merge_model_xmls.py
 ```
+
+## calc_core_shell.py
+Utils program for calculating the core-shell model properties according Carney et al. and Gonzalez-Rubio et al. based on a folder containing the statistics files of the ultrascan tool "Initialize Generic Algorithm". seable directly from the commandline, but supports also input.
+Necessary input values: directory
+```bash
+python calc_core_shell.py
+```
+
