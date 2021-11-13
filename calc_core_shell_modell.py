@@ -5,13 +5,13 @@ import re
 import math
 attributes = ['Name','MW','s','D','ff0',
               'vbar','c_p']
-lm_viscosity = 1.25 * 0.001 # D2O Viskosity
-lm_density = 1.1056 * 1000 # D2O Density
+lm_viscosity = 0.01002 * 0.1 # H2O Viskosity fix
+lm_density = 0.99832 * 1000 # H2O Density fix
 lig_density = 1.03 * 1000 # Ligand Density
 c_density = 4.82 * 1000 # core density
 lig_MW = 6.2
 c_MW = 0.14446
-temp = 293.15 # temperatur
+temp = 293.15 # temperatur fix
 kb = 1.3806e-23 # boltzmann konstante
 R = 8.314 # gas konstante
 Na = 6.022e23 # avogadro zahl
@@ -36,6 +36,7 @@ for filename in os.listdir(dirname):
     dfs.append(pd.DataFrame(data,columns=attributes))
 print('finished reading')
 df = pd.concat(dfs,axis=0)
+df['D'] *= 1e-4 # D unit from cm^2/s to m^2/s
 # Carney
 df['rho_p Carney'] = lm_density + 18*lm_viscosity*df['s'] * (kb*temp/3/math.pi/lm_viscosity/df['D'])**(-2)
 df['dh Carney']=(18*lm_viscosity*df.s/(df['rho_p Carney']-lm_density))**0.5
