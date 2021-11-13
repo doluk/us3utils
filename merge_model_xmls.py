@@ -71,13 +71,13 @@ print('start dumping to xml')
 xml = df_out[colnames].rename({'analyte name': 'name'}, axis=1) \
     .to_xml(index=False, row_name='analyte', root_name='model', attr_cols=['name'] + colnames[1:])
 xml = header + xml[46:] + '\n</ModelData>'
-with open(os.path.join(dirname, 'm1337.xml'), 'w+') as outfile:
+with open(os.path.join(dirname, f'm{dir_input}.xml'), 'w+') as outfile:
     outfile.write(xml)
 print('starting c(s,ff0) file generation')
 df_out['s'] *= 1e13
 lm_viscosity = 0.01002 * 0.1  # D2O Viskosity
 lm_density = 0.99832 * 1000  # D2O Density
 df_out['r_h'] = 1 / df_out.D / 1e-4 * 1.38065e-23 * 293.15 / 6 / lm_viscosity / math.pi
-df.to_csv(str(os.path.join(dirname, dir_input + '-c(s_ff0).dat')), index=False, header=False,
-          columns=['s', 'M', 'f_f0', 'D', 'r_h', 'signal'], sep='\t')
+df_out.to_csv(str(os.path.join(dirname, dir_input + '-c(s_ff0).dat')), index=False, header=False,
+          columns=['s', 'mw', 'f_f0', 'D', 'r_h', 'signal'], sep='\t')
 print('finished')
