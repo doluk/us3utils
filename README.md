@@ -2,9 +2,11 @@
 Utils scripts UltraScan III 4.0
 
 ### requirements
+```
 pyhton 3.9.5
 pandas ~ 1.3.4
 mysql-connector-python==8.0.24
+```
 
 ## fetch_model_xmls.py
 Utils program for fetching model xmls for a given search string from the database. Useable directly from the commandline, but supports also input.
