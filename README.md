@@ -17,7 +17,7 @@ python fetch_model_xmls.py GUID passwort ID search_string
 Before using the database connection values have to be changed!
 
 ## merge_model_xmls.py
-Utils program for merging multiple model xmls in a given directory and creating a new model xml and a c(s,ff0) file in style of sedfit (pending). Useable directly from the commandline, but supports also input.
+Utils program for merging multiple model xmls in a given directory and creating a new model xml and a c(s,ff0) file in style of sedfit. Useable directly from the commandline, but supports also input.
 Necessary input values: directory
 ```bash
 python merge_model_xmls.py
