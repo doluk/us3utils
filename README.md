@@ -6,6 +6,7 @@ Utils scripts UltraScan III 4.0
 pyhton 3.9.5
 pandas ~ 1.3.4
 mysql-connector-python==8.0.24
+lxml
 ```
 
 ## fetch_model_xmls.py
