@@ -1,0 +1,4 @@
+lxml
+mysql-connector-python
+numba
+pandas

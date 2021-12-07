@@ -1,8 +1,9 @@
-import pandas as pd
-import os
-import sys
-import re
 import math
+import os
+import pandas as pd
+import re
+import sys
+
 attributes = ['Name','MW','s','D','ff0',
               'vbar','c_p']
 lm_viscosity = 0.00891 * 0.1 # H2O Viskosity fix in kg/m/s
@@ -21,7 +22,6 @@ if len(sys.argv) != 2:
     dir_input = input('Enter path to directory which should be read:')
 else:
     dir_input = sys.argv[1]
-    sys.environ
 dir = os.path.dirname(__file__)
 dirname = os.path.join(dir, dir_input)
 dfs = []
@@ -41,7 +41,7 @@ df = pd.concat(dfs,axis=0)
 df['D'] *= 1e-4 # D unit from cm^2/s to m^2/s
 # Carney
 df['rho_p Carney'] = lm_density + 18*lm_viscosity*df['s'] * (kb*temp/3/math.pi/lm_viscosity/df['D'])**(-2)
-df['dh Carney']=(18*lm_viscosity*df.s/(df['rho_p Carney']-lm_density))**0.5
+df['dh Carney'] = (18*lm_viscosity*df.s/(df['rho_p Carney']-lm_density))**0.5
 df['d core Carney'] = df['dh Carney']*((df['rho_p Carney']-lig_density)/(c_density-lig_density))**(1/3)
 df['MW_p Carney'] = df.s/df.D*R*temp/(1-lm_density/df['rho_p Carney'])
 df['N_core Carney'] = df['MW_p Carney']/c_MW*(1/lig_density-1/df['rho_p Carney'])/(1/lig_density-1/c_density)
