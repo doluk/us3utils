@@ -1,0 +1,9 @@
+AVOGADRO = 6.022140857e+23
+R = 8.314472  # ideal gas constant m^2kg/s^2/K/mol
+R_GC = 8.314472e+07  # ideal gas constant cm^2g/s^2/K/mol
+K0 = 273.15  # 0 degrees C in Kelvin
+K20 = 293.15  # 20 degrees C in Kelvin
+VISC_20W = 1.00194  # viscosity of water at 20 degrees C mPas
+DENS_20W = 0.998234  # density of water at 20 degrees C kg/m^3
+COMP_25W = 4.6e-10  # compressibility of water at 25 degrees C 1/Pa
+WATER_MW = 18.01  # molecular weight of water u
