@@ -2,3 +2,5 @@ lxml
 mysql-connector-python
 numba
 pandas
+numpy
+matplotlib

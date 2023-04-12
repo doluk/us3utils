@@ -32,21 +32,37 @@ Necessary input values: GUID of the person, password of the person, ID of the pe
 ```bash
 python fetch_model_xmls.py GUID passwort ID search_string
 ```
+
 Before using the database connection values have to be changed!
 
 ## merge_model_xmls.py
-Utils program for merging multiple model xmls in a given directory and creating a new model xml. 
-Usable directly from the commandline, but supports also input.
-Necessary input values: directory
+
+Utils program for merging multiple model xmls in a given directory and creating a new model xml. Usable directly from
+the commandline, but supports also input. Necessary input values: directory
+
 ```bash
-python merge_model_xmls.py
+python merge_model_xmls.py directory
+```
+
+## generate_3Dmodelmesh.py
+
+Utils program for generating point-meshes for plotting the model data. Be careful without specified dimensions the
+program generates 18 meshes, which could take some time. Usable directly from the commandline, but supports also input.
+
+Necessary input values: modelfile_location experimental_temperature experimental_viscosity experimental_density
+
+Optional input values: dimension1 dimension2
+
+```bash
+python generate_3Dmodelmesh.py modelfilelocation temperature viscosity density [dimension1] [dimension2]
 ```
 
 ## calc_core_shell.py
-Utils program for calculating the core-shell model properties according Carney et al. and Gonzalez-Rubio et al. 
-based on a folder containing the statistics files of the ultrascan tool "Initialize Generic Algorithm". 
-Usable directly from the commandline, but supports also input.
-Necessary input values: directory
+
+Utils program for calculating the core-shell model properties according Carney et al. and Gonzalez-Rubio et al. based on
+a folder containing the statistics files of the ultrascan tool "Initialize Generic Algorithm". Usable directly from the
+commandline, but supports also input. Necessary input values: directory
+
 ```bash
 python calc_core_shell.py
 ```
