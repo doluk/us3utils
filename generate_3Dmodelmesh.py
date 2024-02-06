@@ -72,6 +72,11 @@ def calc_grid_component(comp: np.ndarray, min_range_dim1, x_norm, nxd, xpinc, mi
 
 def calc_all_grids(z_norm, powrz, z_min, z_max):
     xyz_dfs = []
+    if z_max * z_norm > MAX_ANNO:
+        z_norm *= 0.1
+        powrz -= 1
+    z_min *= z_norm
+    z_max *= z_norm
     for c, dims in enumerate(xy_of_interest):
         [dimension1, dimension2] = dims
         print(f'Starting grid calculation {c + 1}/{len(xy_of_interest)}')
@@ -85,9 +90,7 @@ def calc_all_grids(z_norm, powrz, z_min, z_max):
         if yavg * y_norm > MAX_ANNO:
             y_norm *= 0.1
             powry -= 1
-        if z_max * z_norm > MAX_ANNO:
-            z_norm *= 0.1
-            powrz -= 1
+
         min_range_dim1 = min_range[[dimension1]].to_numpy()
         max_range_dim1 = max_range[[dimension1]].to_numpy()
         min_range_dim2 = min_range[[dimension2]].to_numpy()
@@ -96,8 +99,7 @@ def calc_all_grids(z_norm, powrz, z_min, z_max):
         max_range_dim1 *= x_norm
         min_range_dim2 *= y_norm
         max_range_dim2 *= y_norm
-        z_min *= z_norm
-        z_max *= z_norm
+
         dim_1_sign = int(min_range_dim1 / np.abs(min_range_dim1))
         dim_2_sign = min_range_dim2 / np.abs(min_range_dim2)
         min_range_dim1 = np.floor(min_range_dim1 * VROUND * dim_1_sign) / VROUND * dim_1_sign
@@ -107,16 +109,18 @@ def calc_all_grids(z_norm, powrz, z_min, z_max):
         min_range_dim1 = np.array([0]) if min_range_dim1 == 0 else min_range_dim1
         min_range_dim1 = min_range_dim1 - VNEGOF if min_range_dim1 < 0 else min_range_dim1
         min_range_dim2 = min_range_dim2 - VNEGOF if min_range_dim2 < 0 else min_range_dim2
-        z_max = np.ceil(z_max * 10) / 10
-        z_min = np.array([0], dtype=np.float64)
+        z_max_t = np.array([np.ceil(z_max * 10) / 10], dtype=np.float64)
+        z_min_t = np.array([0], dtype=np.float64)
         # create global properties
         hixd = hiyd = np.array([round(grid_res) / 5])
         loxd = loyd = np.array([5])
         nxd = hixd
         nyd = hiyd
         zval = z_min
-        xpinc = (grid_res - 1) / (max_range_dim1 - min_range_dim1)
-        ypinc = (grid_res - 1) / (max_range_dim2 - min_range_dim2)
+        delta_dim1: np.ndarray = max_range_dim1 - min_range_dim1
+        delta_dim2: np.ndarray = max_range_dim2 - min_range_dim2
+        xpinc = (grid_res - 1) / (delta_dim1 if delta_dim1 else 1)
+        ypinc = (grid_res - 1) / (delta_dim2 if delta_dim2 else 1)
         zfact = z_scaling
         xdif = math.acos(pow(1e-18, (1.0 / peak_smooth))) * peak_width / (math.pi * 0.5 * sqrt(2.0))
         dfac = math.pi * 0.5 / peak_width
@@ -127,12 +131,17 @@ def calc_all_grids(z_norm, powrz, z_min, z_max):
         nxd = nxd if nxd > loxd else loxd
         nyd = nyd if nyd > loyd else loyd
         components = model_merged[[dimension1, dimension2, 'signal']].to_numpy()
+        print(f"x_min={min_range_dim1} x_max={max_range_dim1} x_norm={x_norm}")
+        print(f"y_min={min_range_dim2} y_max={max_range_dim2} y_norm={y_norm}")
+        print(f"z_min={z_min_t} z_max={z_max_t} z_norm={z_norm}")
         zdata = run_grid_calc(components, min_range_dim1, x_norm, nxd, xpinc, min_range_dim2, y_norm, nyd, ypinc,
                               z_norm, zfact, dfac, grid_res)
         x_axis, x_step = np.linspace(min_range_dim1, max_range_dim1, grid_res, retstep=True)
         y_axis, y_step = np.linspace(min_range_dim2, max_range_dim2, grid_res, retstep=True)
         xy_coords = np.meshgrid(x_axis, y_axis)
-        xyz_data = np.array([[x, y, z] for x, y, z in zip(xy_coords[0].ravel(), xy_coords[1].ravel(), zdata.ravel())])
+        xyz_data = np.array([[x/x_norm, y/y_norm, z/z_norm] for x, y, z in zip(xy_coords[0].ravel(), xy_coords[
+            1].ravel(),
+                                                              zdata.ravel())])
         xyz_frame = pd.DataFrame(xyz_data, columns=[dimension1, dimension2, f'signal-{dimension1}-{dimension2}'])
         xyz_dfs.append(xyz_frame)
         print(f'Finished grid calculation {c + 1}/{len(xy_of_interest)}')
@@ -207,7 +216,7 @@ MAX_ANNO = 99.9 / VROUND
 ncomp = model_merged.shape[0]
 # defaults
 z_scaling = 1
-grid_res = 150
+grid_res = 250
 peak_smooth = 130
 peak_width = 0.3
 x_rel_scale = 1
