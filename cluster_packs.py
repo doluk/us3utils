@@ -111,6 +111,7 @@ def export_packages_mwrs(raw_data, output_dir, cells, packages):
 def export_packages_auc(raw_data, output_dir, cells, packages, run_id: str = None):
     """Export the packages to auc files"""
     packs = []
+
     for pair in packages:
         [lower, upper] = pair
         packs.append([x for x in range(int(lower), int(upper) + 1)])
@@ -129,8 +130,8 @@ def export_packages_auc(raw_data, output_dir, cells, packages, run_id: str = Non
                 data['scanData'].append({'temperature': scan['temperature'], 'speed': scan['speed'],
                                        'seconds': scan['seconds'], 'omega2t': scan['omega2t'],
                                        'wavelength': wave, 'radius_step': scan['radius_step'],
-                                       'reading_values': scan['readings']})
-            filename = Path(output_dir) / c_run_id / f"{c_run_id}.IP.{cell}.A.{wave}.auc"
+                                       'reading_values': scan['readings'][:-1]})
+            filename = Path(output_dir) / c_run_id / f"{c_run_id}.IP.{cell}.A.{wave:04}.auc"
             if not Path(output_dir).is_dir():
                 Path(output_dir).mkdir()
             if not (Path(output_dir) / c_run_id).is_dir():
@@ -139,10 +140,20 @@ def export_packages_auc(raw_data, output_dir, cells, packages, run_id: str = Non
 
 
 
-def main(directory, scan_pairs):
+def main(directory, scan_pairs, scans_per_package):
     # Your processing logic goes here
     run_id = Path(directory).stem
     scan_counts = count_scans(directory)
+    if not scan_pairs or len(scan_pairs) == 0:
+        # generate scan pairs from scans per package
+        scan_pairs = []
+        max_scans = max(scan_counts.values())
+        for i in range(1, max_scans, scans_per_package):
+            if i + scans_per_package > max_scans:
+                scan_pairs.append([i-(i+scans_per_package-max_scans), max_scans])
+            else:
+                scan_pairs.append([i, i + scans_per_package - 1])
+
     print(scan_pairs)
     scans_to_read = generate_scans_to_read(scan_pairs)
     max_scan = max(scans_to_read)
@@ -160,11 +171,16 @@ def main(directory, scan_pairs):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Process some raw data.')
     parser.add_argument('directory', type=str, help='Input directory with raw data')
-    parser.add_argument('scan_pairs', type=str, nargs='+', help='Pairs of numbers')
+    parser.add_argument('-scan_pairs', type=str, nargs='+', help='Pairs of numbers', required=False)
+    parser.add_argument('-spp', type=int, help='Scans per package', required=False)
 
     args = parser.parse_args()
+    if args.scan_pairs is None and args.spp is None:
+        raise Exception('Either Scan pairs or scans per package is required')
+    if args.scan_pairs:
+        # parse string pair into tuple of integers
+        scan_pairs = [tuple(map(int, pair.split(','))) for pair in args.scan_pairs]
+    else:
+        scan_pairs = []
 
-    # parse string pair into tuple of integers
-    scan_pairs = [tuple(map(int, pair.split(','))) for pair in args.scan_pairs]
-
-    main(args.directory, scan_pairs)
+    main(args.directory, scan_pairs, args.spp)
