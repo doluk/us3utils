@@ -1,9 +1,10 @@
 # /// script
 # requires-python = ">=3.12"
 # dependencies = [
-#     "pandas",
-#     "numpy",
+#     "llvmlite",
 #     "numba",
+#     "numpy",
+#     "pandas",
 # ]
 # ///
 import math
@@ -19,9 +20,11 @@ from utils import converter as cv
 
 colnames = ['analyte name', 'mw', 's', 'D', 'f', 'f_f0', 'vbar20', 'extinction', 'axial', 'sigma', 'delta', 'oligomer',
             'shape', 'type', 'molar', 'signal']
-xy_combs = [('s', 'f_f0'), ('s', 'D'), ('s', 'vbar20'), ('s', 'mw'), ('D', 'f_f0'), ('D', 'vbar20'), ('D', 'mw'),
-            ('s20w', 'f_f0'), ('s20w', 'D20w'), ('s20w', 'vbar20'), ('s20w', 'mw'), ('D20w', 'f_f0'),
-            ('D20w', 'vbar20'), ('D20w', 'mw'), ('s', 'D20w'), ('s20w', 'D'), ('mw', 'f_f0'), ('mw', 'vbar20')]
+#xy_combs = [('s', 'f_f0'), ('s', 'D'), ('s', 'vbar20'), ('s', 'mw'), ('D', 'f_f0'), ('D', 'vbar20'), ('D', 'mw'),
+#            ('s20w', 'f_f0'), ('s20w', 'D20w'), ('s20w', 'vbar20'), ('s20w', 'mw'), ('D20w', 'f_f0'),
+#            ('D20w', 'vbar20'), ('D20w', 'mw'), ('s', 'D20w'), ('s20w', 'D'), ('mw', 'f_f0'), ('mw', 'vbar20')]
+xy_combs = [ ('s', 'D'), ('s20w', 'D20w'), ('s', 'D20w'), ('s20w', 'D')]
+# xy_combs = [('s', 'D')]
 axis = ['mw', 's', 'D', 'f', 'f_f0', 'vbar20', 's20w', 'D20w']
 
 
@@ -154,7 +157,7 @@ def calc_all_grids(z_norm, powrz, z_min, z_max):
         xyz_dfs.append(xyz_frame)
         print(f'Finished grid calculation {c + 1}/{len(xy_of_interest)}')
     data = pd.concat(xyz_dfs, axis=1)
-    data.to_csv(".".join(dir_input.split('.')[:-1]) + f'.csv')
+    data.to_csv(".".join(dir_input.split('.')[:-1]) + '.csv')
 
 
 if len(sys.argv) == 7:
