@@ -1,27 +1,38 @@
+# /// script
+# requires-python = ">=3.12"
+# dependencies = [
+#     "aiohttp",
+#     "asyncio",
+#     "python-dotenv",
+# ]
+# ///
 import aiohttp
 import argparse
 import asyncio
 import re
+import os
+from dotenv import load_dotenv
 
-base_url = "https://ultrascan.chemie.uni-konstanz.de/uslims3_UKN/"
+load_dotenv()
+
+base_url = os.getenv('WEBSITE_URL')
 creds = {
-    'email': 'EMAIL',
-    'password': 'PASSWORD',
-    'Submit': 'Sign In',
+    'email'   : os.getenv('USER_EMAIL'),
+    'password': os.getenv('USER_PASSWORD'),
+    'Submit'  : 'Sign In',
 }
 # experiment ids, get it either from the database (table experiment/rawdata runID) or by inspecting
 # https://ultrascan.chemie.uni-konstanz.de/uslims3_UKN//queue_setup_1.php and looking at the form to select experiments
-experiment_ids = [] # list of integers for example [344]
+experiment_ids = []  # list of integers for example [344]
 # or if you are lazy, you can specify a list of strings to search for in the experiment name
-search_experiment_ids = [] # list of strings for example ['43_v1']
+search_experiment_ids = []  # list of strings for example ['43_v1']
 
 # list of strings to cell rawDataID:filename with filename being RunID.Optic.Cell.Channel.Wavelength.auc
 # Optic can be RA, IP, RI, FI, WA, WI
 # Channel can be A, B
-cells = [] # list of strings for example ['67989:43_v1.RI.1.A.520.auc']
+cells = []  # list of strings for example ['67989:43_v1.RI.1.A.520.auc']
 # or if you are lazy, you can specify a list of strings to search for in the cell name
-search_cells = [] # list of strings for example ['1.A.520']
-
+search_cells = []  # list of strings for example ['1.A.520']
 
 # job parameters
 s_min = 1
@@ -31,31 +42,32 @@ ff0_min = 1.0
 ff0_max = 4.0
 ff0_grid_points = 64
 mc_iterations = 1
-tinoise = 0 # Fit time invariant noise 0 = no, 1 = yes
-rinoise = 0 # Fit radially invariant noise 0 = no, 1 = yes
-fit_mb = 0 # Fit meniscus and/or bottom: 0 = no, 1 = meniscus, 2 = bottom, 3 = both
-meniscus_range = 0.03 # meniscus and bottom range
-meniscus_points = 1 # meniscus and bottom points in the range
-iterations_option = 0 # enable iterative method 0 = no, 1 = yes
-max_iterations = 10 # set max iterations
-debug_level = 0 # set debug level
-debug_text = '' # debug text
-simpoints = 200 # set simulation points
-band_volume = 0.015 # set band volume in mL
-radial_grid = 0 # Radial grid 0 = ASTFEM /default), 1 = Claverie, 2 = Moving Hat, 3 = ASTFVM(not public yet)
-time_grid = 1 # Time grid 0 = adaptive space time (default), 1 = Constant
-cluster = 'ultrascan.chemie.uni-konstanz.de:us3iab-node0:batch' # cluster node to use
+tinoise = 0  # Fit time invariant noise 0 = no, 1 = yes
+rinoise = 0  # Fit radially invariant noise 0 = no, 1 = yes
+fit_mb = 0  # Fit meniscus and/or bottom: 0 = no, 1 = meniscus, 2 = bottom, 3 = both
+meniscus_range = 0.03  # meniscus and bottom range
+meniscus_points = 1  # meniscus and bottom points in the range
+iterations_option = 0  # enable iterative method 0 = no, 1 = yes
+max_iterations = 10  # set max iterations
+debug_level = 0  # set debug level
+debug_text = ''  # debug text
+simpoints = 200  # set simulation points
+band_volume = 0.015  # set band volume in mL
+radial_grid = 0  # Radial grid 0 = ASTFEM /default), 1 = Claverie, 2 = Moving Hat, 3 = ASTFVM(not public yet)
+time_grid = 0  # Time grid 0 = adaptive space time (default), 1 = Constant
+cluster = os.getenv('CLUSTER_NODE')  # cluster node to use
 
-
-
-
-cell_search_regex = re.compile(r"\d+:(?:[\w\W]+?)\.(?:RI|RA|IP|FI|WA|WI)\.(?:\d+)\.(?:A|B)\.(?:\d+)\.auc")
+cell_search_regex = re.compile(r"\d+:[\w\W]+?\.(?:RI|RA|IP|FI|WA|WI)\.\d+\.[AB]\.\d+\.auc")
 
 
 # create command line interface, default to values specified above
 
 
-async def main(parameters: dict = None, experiment_ids: list = None, cells: list = None, search_experiment_ids: list = None, search_cells: list = None):
+async def main(parameters: dict = None,
+               experiment_ids: list = None,
+               cells: list = None,
+               search_experiment_ids: list = None,
+               search_cells: list = None):
     async with aiohttp.ClientSession(headers={'Connection': 'keep-alive'}) as session:
         # load login page
         cookies = {}
@@ -67,7 +79,6 @@ async def main(parameters: dict = None, experiment_ids: list = None, cells: list
         # login
         login_form_data = aiohttp.FormData(creds)
         async with session.post(f"{base_url}checkuser.php", data=login_form_data) as response:
-
             if response.status != 200:
                 print(await response.text())
                 print("Login failed")
@@ -75,7 +86,7 @@ async def main(parameters: dict = None, experiment_ids: list = None, cells: list
         # initial queue page
         queue_setup_1 = aiohttp.FormData()
         queue_setup_1.add_field('submitter_email', creds['email'])
-        if not experiment_ids: # no experiment_ids, get them from the website
+        if not experiment_ids:  # no experiment_ids, get them from the website
             async with session.get(f"{base_url}queue_setup_1.php") as response:
                 if response.status != 200:
                     print(await response.text())
@@ -85,7 +96,7 @@ async def main(parameters: dict = None, experiment_ids: list = None, cells: list
                 site_content = await response.text()
                 # parse experiment ids from the page with regex
                 # example: <option value="344">2021-06-24 43_v1</option>
-                items = re.findall(r"<option value='(\d+)'>\d\d\d\d-\d\d-\d\d ([\w\W]*?)<\/option>",
+                items = re.findall(r"<option value='(\d+)'>\d\d\d\d-\d\d-\d\d ([\w\W]*?)</option>",
                                    site_content)
                 for item in items:
                     for search_id in search_experiment_ids:
@@ -96,7 +107,6 @@ async def main(parameters: dict = None, experiment_ids: list = None, cells: list
             return
         for exp_id in experiment_ids:
             queue_setup_1.add_field('expIDs[]', exp_id)
-        cell_select = ""
         async with session.post(f"{base_url}queue_setup_1.php",
                                 data=queue_setup_1) as response:
             if search_cells:
@@ -106,7 +116,7 @@ async def main(parameters: dict = None, experiment_ids: list = None, cells: list
                     for search_cell in search_cells:
                         if search_cell in parsed_cells:
                             cells.append(parsed_cells)
-
+            
             if response.status != 200:
                 print(await response.text())
                 print("Failed to setup queue")
@@ -134,7 +144,7 @@ async def main(parameters: dict = None, experiment_ids: list = None, cells: list
                 print(await response.text())
                 print("Failed to set edit and noise select")
                 pass
-
+        
         # start job
         job_parameters = aiohttp.FormData()
         for k, v in parameters.items():
@@ -145,6 +155,8 @@ async def main(parameters: dict = None, experiment_ids: list = None, cells: list
             if response.status != 302:
                 print("Failed to start job")
                 pass
+
+
 if __name__ == "__main__":
     # parse command line arguments
     parser = argparse.ArgumentParser(description='Submit jobs to ultrascan')
@@ -218,7 +230,7 @@ if __name__ == "__main__":
                         default=mc_iterations,
                         required=False,
                         help='integer for monte carlo iterations (default: 1)')
-    parser.add_argument('--ti',
+    parser.add_argument('--tinoise',
                         metavar='TI',
                         type=int,
                         default=tinoise,
@@ -304,8 +316,30 @@ if __name__ == "__main__":
                         help='cluster node to use (default: ultrascan.chemie.uni-konstanz.de:us3iab-node0:batch)')
     args = parser.parse_args()
     parameters = vars(args)
-    job_parameters = {k: v for k, v in parameters.items() if k not in ['experiment_ids', 'cells', 'search_experiment_ids', 'search_cells']}
-    asyncio.run(main(parameters,
+    job_parameters = {k: v for k, v in parameters.items() if
+                      k not in ['experiment_ids', 'cells', 'search_experiment_ids', 'search_cells']}
+    # map parameters to job_parameters
+    job_parameters['tinoise_option'] = parameters['tinoise']
+    job_parameters['rinoise_option'] = parameters['rinoise']
+    job_parameters['fit_mb_select'] = parameters['fit_mb']
+    if parameters['fit_mb'] == 0:
+        job_parameters['meniscus_range'] = 0.0
+        job_parameters['meniscus_points'] = 1
+    job_parameters['cluster'] = parameters['clusternode']
+    job_parameters['s_value_min'] = parameters['s_min']
+    job_parameters['s_value_max'] = parameters['s_max']
+    job_parameters['mc_iterations'] = parameters['mc_iterations']
+    if parameters['iterations_option'] == 0:
+        job_parameters['max_iterations'] = 1
+    job_parameters['debug_level-value'] = parameters['debug_level']
+    job_parameters['debug_text-value'] = parameters['debug_text']
+    job_parameters['simpoints-value'] = parameters['simpoints']
+    job_parameters['band_volume-value'] = parameters['band_volume']
+    job_parameters['req_mgroupcount'] = 1  # number of groups
+    job_parameters['uniform_grid'] = 8  # uniform grid repitions
+    job_parameters['debug_timings'] = 1  # debug timings
+    
+    asyncio.run(main(job_parameters,
                      experiment_ids=args.experiment_ids,
                      cells=args.cells,
                      search_experiment_ids=args.search_experiment_ids,

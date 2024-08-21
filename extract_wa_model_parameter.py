@@ -1,3 +1,10 @@
+# /// script
+# requires-python = ">=3.12"
+# dependencies = [
+#     "numpy",
+#     "pandas",
+# ]
+# ///
 # Read all .xml files from a given directory
 import os
 import traceback

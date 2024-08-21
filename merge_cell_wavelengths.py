@@ -1,3 +1,9 @@
+# /// script
+# requires-python = ">=3.12"
+# dependencies = [
+#     "pandas",
+# ]
+# ///
 import os
 import shutil
 import re

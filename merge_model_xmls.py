@@ -1,3 +1,9 @@
+# /// script
+# requires-python = ">=3.12"
+# dependencies = [
+#     "pandas",
+# ]
+# ///
 import math
 import os
 import pandas as pd

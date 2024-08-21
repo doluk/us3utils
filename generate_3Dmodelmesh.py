@@ -1,3 +1,11 @@
+# /// script
+# requires-python = ">=3.12"
+# dependencies = [
+#     "pandas",
+#     "numpy",
+#     "numba",
+# ]
+# ///
 import math
 import sys
 import traceback

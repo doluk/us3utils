@@ -1,3 +1,10 @@
+# /// script
+# requires-python = ">=3.12"
+# dependencies = [
+#     "mysql-connector-python",
+#     "python-dotenv",
+# ]
+# ///
 import sys
 import os
 
@@ -5,18 +12,20 @@ import os
 # Imports
 ###############################################################################
 
-from typing import Union
 import mysql.connector
 
 
 ###############################################################################
 # Constants
 ###############################################################################
+from dotenv import load_dotenv
 
-DB_HOST = 'XXXXXXXXXXXXXXXXXXX'
-DB_NAME = 'XXXXXXXXXXXXXXXXXXX'
-DB_USR = 'XXXXXXXXXXXXXXXXXXX'
-DB_PWD = 'XXXXXXXXXXXXXXXXXXX'
+load_dotenv()
+
+DB_HOST = os.getenv('DB_HOST')
+DB_NAME = os.getenv('DB_NAME')
+DB_USR = os.getenv('DB_USER')
+DB_PWD = os.getenv('DB_PASSWORD')
 
 
 ###############################################################################
@@ -96,7 +105,7 @@ def fetch_model_ids(p_GUID,p_passwort,p_ID,p_search):
         models = handler.call_proc("get_model_desc_by_runID",(p_GUID,p_passwort,p_ID,p_search),close=True)[1:]
     except NotFoundException:
         print(f'No models for the search input {p_search} found.')
-        return
+        return []
     except Exception as e:
         print(e)
         exit(1)
@@ -104,7 +113,7 @@ def fetch_model_ids(p_GUID,p_passwort,p_ID,p_search):
     return ids
 def fetch_model_info(p_GUID,p_passwort,p_search,model_id):
     try:
-        model_info = handler.call_proc("get_model_info",(p_GUID,p_passwort,model_id),
+        model_info = handler.call_proc("get_model_info", (p_GUID,p_passwort,model_id),
                                             close=True)[1:]
     except NotFoundException:
         print(f'No Model for model ID {model_id} found')
@@ -118,9 +127,18 @@ def fetch_model_info(p_GUID,p_passwort,p_search,model_id):
 
 print("#".join(sys.argv))
 if len(sys.argv) != 5:
-    p_GUID = input('Enter GUID:')
-    p_passwort = input('Enter passwort:')
-    p_ID = input('Enter ID:')
+    if not os.getenv('USER_GUID'):
+        p_GUID = input('Enter GUID:')
+    else:
+        p_GUID = os.getenv('USER_GUID')
+    if not os.getenv('USER_PASSWORD'):
+        p_passwort = input('Enter passwort:')
+    else:
+        p_passwort = os.getenv('USER_PASSWORD')
+    if not os.getenv('USER_ID'):
+        p_ID = input('Enter ID:')
+    else:
+        p_ID = os.getenv('USER_ID')
     print('Example for a search string to fetch all data from the Run 2667 in Cell 3 Channel A at the wavelength 380 '
           'and only 2DSA-Monte Carlo Models:\n"2667.3A380%2DSA-MC"')
     p_search = input('Now you can enter your search input. It should contain at least the runID you set while '
