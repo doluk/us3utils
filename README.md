@@ -1,36 +1,32 @@
 # us3utils
 Utils scripts UltraScan III 4.0
 
-### requirements
-To set up your computer, you have to meet these requirements:
-```
-pyhton 3.9.5
-pandas ~ 1.3.4
-mysql-connector-python
-lxml
-numba
-```
+
 #### installation guide
-1. Download and install python 3.10 (click [here](https://www.python.org/downloads/) to visit the python download page).
-Make sure you add python to your path (an option during the installation)
-2. Open a terminal window (windows and search for `cmd`)
-3. Run the following command `pip install pandas mysql-connector-python lxml numba`
-4. Download the code by clicking [here](https://github.com/doluk/us3utils/archive/refs/heads/main.zip)
-5. Extract the files to a directory of your choice (doesn't matter)
+1. Open a terminal window (windows and search for `cmd`)
+2. Install uv following the [documentation](https://docs.astral.sh/uv/getting-started/installation/) with `curl 
+-LsSf https://astral.sh/uv/install.sh | sh` on macOS/Linux or `powershell -c "irm https://astral.sh/uv/install.ps1 | 
+iex"` on Windows. `uv` is an awesome tool for running python scripts and handles all dependencies for you, including 
+   python itself.
+3. Download the code by clicking [here](https://github.com/doluk/us3utils/archive/refs/heads/main.zip) or executing 
+   `git clone https://github.com/doluk/us3utils` if you have git installed
+4. Extract the files to a directory of your choice (doesn't matter) in case you didn't use the terminal command
+5. Clone the .env.example file and rename it to .env. Afterwards fill it with your information.
 
 #### user guide
 After you navigated to the directory containing the scripts, you can use them in three ways:
 - Double-clicking on them and entering needed values one after another
-- Execute the scripts via commandline with `python script_name` without further arguments, which results in entering 
+- Execute the scripts via commandline with `uv run script_name` without further arguments, which results in entering 
 them one after another
-- Execute the scripts via commandline with `python script_name arg1 arg2` specifying the needed arguments all by one
+- Execute the scripts via commandline with `uv run script_name arg1 arg2` specifying the needed arguments all by one
 
 ## fetch_model_xmls.py
 Utils program for fetching model xmls for a given search string from the database. Usable directly from the 
 commandline, but supports also input.
-Necessary input values: GUID of the person, password of the person, ID of the person and search string.
+Necessary input values, if you haven't setup the .env file: GUID of the person, password of the person, ID of the 
+person and search string.
 ```bash
-python fetch_model_xmls.py GUID passwort ID search_string
+uv run fetch_model_xmls.py [GUID] [passwort] [ID] search_string
 ```
 
 Before using the database connection values have to be changed!
@@ -41,7 +37,7 @@ Utils program for merging multiple model xmls in a given directory and creating 
 the commandline, but supports also input. Necessary input values: directory
 
 ```bash
-python merge_model_xmls.py directory
+uv run merge_model_xmls.py directory
 ```
 
 ## generate_3Dmodelmesh.py
@@ -54,7 +50,7 @@ Necessary input values: modelfile_location experimental_temperature experimental
 Optional input values: dimension1 dimension2
 
 ```bash
-python generate_3Dmodelmesh.py modelfilelocation temperature viscosity density [dimension1] [dimension2]
+uv run generate_3Dmodelmesh.py modelfilelocation temperature viscosity density [dimension1] [dimension2]
 ```
 
 ## calc_core_shell.py
@@ -64,6 +60,6 @@ a folder containing the statistics files of the ultrascan tool "Initialize Gener
 commandline, but supports also input. Necessary input values: directory
 
 ```bash
-python calc_core_shell.py
+uv run calc_core_shell.py
 ```
 
