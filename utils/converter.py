@@ -1,6 +1,6 @@
 import pandas as pd
 
-from utils.us_constants import *
+from utils.us_constants import DENS_20W, VISC_20W
 
 
 def denormalize(data: pd.DataFrame, density_exp: float, viscousity_exp: float, temperature_exp: float) -> pd.DataFrame:
