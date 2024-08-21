@@ -181,4 +181,10 @@ cython_debug/
 *.xml
 *.json
 *.auc
-
+*.dat
+*.txt
+*.opju
+*.mwrs
+*.mwr
+*.RA*
+*.RI*
