@@ -1,5 +1,6 @@
 import argparse
 import collections
+import sys
 from pathlib import Path
 import struct
 
@@ -117,32 +118,43 @@ def export_packages_auc(raw_data, output_dir, cells, packages, run_id: str = Non
         packs.append([x for x in range(int(lower), int(upper) + 1)])
     for cell in cells:
         for i in packs:
+            if not i:
+                print('cell {cell}: skip empty package', file=sys.stderr)
+                continue
             wave = max(i)
-            scan = raw_data[f'{cell}_{i[0]}']
+            scan = {}
+            for j in i:
+                try:
+                    scan = raw_data[f'{cell}_{j}']
+                    break
+                except KeyError:
+                    pass
+            if not scan:
+                print(f'cell {cell}: no scans in pack {i[0]} to {i[-1]}', file=sys.stderr)
+                continue
+            
             c_run_id = run_id if run_id else scan['description']
             data = {'cell': cell, 'description': scan['description'],
                     'radii': scan['radius'],
                     'scanData': []}
             for x in i:
                 if f'{cell}_{x}' not in raw_data:
-                    raise Exception(f'Cell {cell} scan {x} not found in raw data')
+                    print(f'Cell {cell} scan {x} not found in raw data', file=sys.stderr)
+                    continue
                 scan = raw_data[f'{cell}_{x}']
                 data['scanData'].append({'temperature': scan['temperature'], 'speed': scan['speed'],
-                                       'seconds': scan['seconds'], 'omega2t': scan['omega2t'],
-                                       'wavelength': wave, 'radius_step': scan['radius_step'],
-                                       'reading_values': scan['readings'][:-1]})
-            filename = Path(output_dir) / c_run_id / f"{c_run_id}.IP.{cell}.A.{wave:04}.auc"
+                                         'seconds': scan['seconds'], 'omega2t': scan['omega2t'],
+                                         'wavelength': wave, 'radius_step': scan['radius_step'],
+                                         'reading_values': scan['readings'][:-1]})
+            filename = Path(output_dir) / f"{c_run_id}.IP.{cell}.A.{wave:04}.auc"
             if not Path(output_dir).is_dir():
                 Path(output_dir).mkdir()
-            if not (Path(output_dir) / c_run_id).is_dir():
-                (Path(output_dir) / c_run_id).mkdir()
             write_auc(str(filename), data)
 
 
-
-def main(directory, scan_pairs, scans_per_package):
+def main(directory, output_dir, scan_pairs=[], scans_per_package=50):
     # Your processing logic goes here
-    run_id = Path(directory).stem
+    run_id = Path(output_dir).stem
     scan_counts = count_scans(directory)
     if not scan_pairs or len(scan_pairs) == 0:
         # generate scan pairs from scans per package
@@ -150,18 +162,17 @@ def main(directory, scan_pairs, scans_per_package):
         max_scans = max(scan_counts.values())
         for i in range(1, max_scans, scans_per_package):
             if i + scans_per_package > max_scans:
-                scan_pairs.append([i-(i+scans_per_package-max_scans), max_scans])
+                scan_pairs.append([i - (i + scans_per_package - max_scans), max_scans])
             else:
                 scan_pairs.append([i, i + scans_per_package - 1])
-
-    print(scan_pairs)
+    
+    # print(scan_pairs)
     scans_to_read = generate_scans_to_read(scan_pairs)
     max_scan = max(scans_to_read)
     for cell, scan_count in scan_counts.items():
         if scan_count < max_scan:
-            raise Exception(f'Cell {cell} has only {scan_count} scans, skipping')
+            print(f'Cell {cell} has only {scan_count} scans, want {max_scan}.', file=sys.stderr)
     raw_data = read_scans(directory, scans_to_read, scan_counts.keys())
-    output_dir = Path(directory) / 'auc'
     export_packages_auc(raw_data, str(output_dir), scan_counts.keys(), scan_pairs, run_id)
 
 

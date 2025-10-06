@@ -5,6 +5,7 @@
 #     "python-dotenv",
 # ]
 # ///
+import re
 import sys
 import os
 
@@ -93,12 +94,14 @@ class DBHandler:
 
 handler = DBHandler()
 
+VARIANCE_REGEX = r'variance="[0-9.e-]*"'
 
 
 def save_xml(model,p_search):
     with open(f'{p_search}/'+"#".join(model[1].split('.')[:-1])+'.xml', 'w',encoding='utf8') as f:
-        f.write(model[2])
+        f.write(re.sub(VARIANCE_REGEX, '', model[2]))
     f.close()
+    
 def fetch_model_ids(p_GUID,p_passwort,p_ID,p_search):
     # fetch all model IDs
     try:
@@ -111,6 +114,7 @@ def fetch_model_ids(p_GUID,p_passwort,p_ID,p_search):
         exit(1)
     ids = [m[0] for m in models[0]]
     return ids
+
 def fetch_model_info(p_GUID,p_passwort,p_search,model_id):
     try:
         model_info = handler.call_proc("get_model_info", (p_GUID,p_passwort,model_id),
@@ -122,7 +126,7 @@ def fetch_model_info(p_GUID,p_passwort,p_search,model_id):
         print(e)
         exit(1)
     for mi in model_info[0]:
-        save_xml(mi,p_search)
+        save_xml(mi, p_search)
 
 
 print("#".join(sys.argv))
@@ -166,9 +170,3 @@ print(f'Starting exporting {len(model_ids)} xml files')
 for mid in model_ids:
     fetch_model_info(p_GUID,p_passwort,filename,mid)
 print('Finished')
-
-
-
-
-
-

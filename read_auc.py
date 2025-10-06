@@ -40,9 +40,11 @@ def read_auc(filename: str):
         data["description"] = f.read(240).decode().strip('\x00')
         # read 4 bytes as little endian float
         min_radius = struct.unpack('f', f.read(4))[0]
+        data["min_radius"] = min_radius
         f.read(4) # unused data
         # read 4 bytes as little endian float
         delta_radius = struct.unpack('f',f.read(4))[0]
+        data["delta_radius"] = delta_radius
         # read 4 bytes as little endian float
         min_data1 = struct.unpack('f',f.read(4))[0]
         # read 4 bytes as little endian float
@@ -56,47 +58,63 @@ def read_auc(filename: str):
         data["scan_count"] = scan_count
         data["scanData"] = []
         # read every scan
+        read_bytes = 0
         for i in range(0, scan_count):
+            read_bytes_before = read_bytes
             # read 4 bytes type to verify we are in DATA range
             type_data = f.read(4).decode()
+            read_bytes += 4
             if type_data != "DATA":
                 assert "Not UltraScan data"
             scan = {}
             # read 4 bytes as little endian float
             scan['temperature'] = struct.unpack('f',f.read(4))[0]
+            read_bytes += 4
             # read 4 bytes as little endian float
             scan['rpm'] = struct.unpack('f',f.read(4))[0]
+            read_bytes += 4
             # read 4 bytes as little endian int
             scan['seconds'] = int.from_bytes(f.read(4), 'little', signed=True)
+            read_bytes += 4
             # read 4 bytes as little endian float
             scan['omega2t'] = struct.unpack('f',f.read(4))[0]
+            read_bytes += 4
             # read 2 bytes as signed little endian int and calculate wavelength from it
             if wvlf_new:
                 wavelength = int.from_bytes(f.read(2),'little', signed=True) / 10
             else:
                 wavelength = int.from_bytes(f.read(2), 'little', signed=True) / 100 + 180
             scan['wavelength'] = wavelength
+            read_bytes += 2
             # read 4 bytes as little endian float
             scan['delta_r'] = struct.unpack('f',f.read(4))[0]
+            read_bytes += 4
             # read 4 bytes as little endian int
             value_count = int.from_bytes(f.read(4), 'little', signed=True)
+            read_bytes += 4
             data['valueCount'] = value_count
             factor1 = (max_data1 - min_data1) / 65535.0
             factor2 = (max_data2 - min_data2) / 65535.0
             stdDev = min_data2 != 0.0 or max_data2 != 0.0
             reading_values = []
             stddevs = []
+            read_bytes_middle = read_bytes
+            # print(f"Before Reading {read_bytes_middle- read_bytes_before} bytes for scan {i}")
             for j in range(0, value_count):
                 # read 2 bytes as unsigned little endian int
                 reading_value = min_data1 + factor1 * int.from_bytes(f.read(2), 'little', signed=False)
+                read_bytes += 2
                 if stdDev:
                     # read 2 bytes as unsigned little endian int
                     sval = min_data2 + factor2 * int.from_bytes(f.read(2), 'little', signed=False)
+                    read_bytes += 2
                 else:
                     sval = 0.0
                 # append read values to data
                 reading_values.append(reading_value)
                 stddevs.append(sval)
+            # print(f"After Reading {read_bytes - read_bytes_middle} bytes for scan {i}")
+            
             scan["reading_values"] = reading_values
             if stdDev:
                 scan["stddevs"] = stddevs
@@ -106,8 +124,11 @@ def read_auc(filename: str):
                 scan["nz_stddev"] = False
             # read (value_count+7)/8 bytes which are a Bytearray indicating if the position was interpolated or not
             interpolated = f.read((value_count+7)//8)
+            read_bytes += (value_count+7)//8
             scan['interpolated'] = [byte & 1 for byte in bytearray(interpolated)]
             data["scanData"].append(scan)
+            read_bytes_after = read_bytes
+            # print(f"End Scan {read_bytes_after - read_bytes_before} bytes for scan {i}")
 
         # construct radius vector
         radius = []
@@ -115,4 +136,3 @@ def read_auc(filename: str):
             radius.append(delta_radius * j + min_radius)
         data["radius"] = radius
     return data
-
