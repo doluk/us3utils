@@ -9,6 +9,7 @@ import struct
 
 from read_auc import read_auc
 from write_auc import write_auc
+from write_mw import write_mw
 from write_mwrs import write_mwrs
 DIR = pathlib.Path(r"PATH")
 FILEPATTERN = re.compile(r"(?P<runID>[A-Za-z0-9-_]*)\.(?P<optic>[A-Z]*)\.(?P<cell>[0-9])\.(?P<channel>[A-Z])\.(?P<wavelength>[0-9]+)\.auc")
@@ -87,9 +88,15 @@ for runID, cells in grouped_data.items():
                 rpm /= len(scan)
                 delta_radius /= len(scan)
                 reading_count /= len(scan)
-                data = write_mwrs(int(cell), channel, x+1, int(round(rpm)), int(round(rpm)),
-                                  int(round(temperature)), omega2t, int(round(seconds)), min_radius,
-                                  delta_r, wavels, int(reading_count),
-                                  readings)
-                with open(DIR / f"{runID}.{cell}.{channel}.sample.{x+1:03}.mwrs", 'wb') as f:
+                data = write_mw(1234,
+                                1711494000,11060,
+                                int(cell),
+                                channel,
+                                x+1,
+                                wavelengths[wavelength]['description'],
+                                int(round(rpm)), temperature,
+                                omega2t,
+                                int(round(seconds)), int(reading_count), min_radius*10.0,
+                                max_radius*10.0, wavels, readings)
+                with open(DIR / f"{channel}{x+1:03}.MW{cell}", 'wb') as f:
                     f.write(data)

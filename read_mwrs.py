@@ -30,4 +30,3 @@ def read_mwrs(filename: str):
     radius_step = radius_step / 10000
 
     return cell, channel.decode(), scan, set_speed, speed, temperature, omegat2, seconds, radius_count, radius_start, radius_step, lambdas, intensity
-
