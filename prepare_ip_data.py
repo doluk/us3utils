@@ -62,8 +62,28 @@ def process_ip_file(file_path, nth, output_dir):
     if not radii:
         return None, None
 
+    # Slope and intersect should only be fitted for the 50% to 80% of the radial domain
+    r_min = min(radii)
+    r_max = max(radii)
+    r_range = r_max - r_min
+    
+    r_start = r_min + 0.50 * r_range
+    r_end = r_min + 0.80 * r_range
+    
+    fit_radii = []
+    fit_readings = []
+    for r, v in zip(radii, readings):
+        if r_start <= r <= r_end:
+            fit_radii.append(r)
+            fit_readings.append(v)
+            
+    if not fit_radii:
+        # Fallback to full data if domain is too small or no points in range
+        # Although with 30% of the range, there should be points if the distribution is decent.
+        fit_radii, fit_readings = radii, readings
+
     # Linear regression: y = mx + c
-    slope, intercept = np.polyfit(radii, readings, 1)
+    slope, intercept = np.polyfit(fit_radii, fit_readings, 1)
 
     # Prepare the output file content
     output_content = header + filtered_data_lines
@@ -123,14 +143,14 @@ def main():
                 # Check against the last valid scan
                 last_slope = valid_slopes[-1]
                 change = abs(slope - last_slope) / abs(last_slope) if last_slope != 0 else 0
-                if change > 0.05:
+                if change > 0.1:
                     is_faulty = True
                 
                 # Check against the scan before that if it exists
                 if not is_faulty and len(valid_slopes) >= 2:
                     prev_slope = valid_slopes[-2]
                     change_prev = abs(slope - prev_slope) / abs(prev_slope) if prev_slope != 0 else 0
-                    if change_prev > 0.05:
+                    if change_prev > 0.1:
                         is_faulty = True
 
             if is_faulty:
@@ -139,6 +159,7 @@ def main():
                 valid_slopes.append(slope)
                 # Save the file
                 output_path, content = result
+                print(f"Processed {file_path.name}: Slope = {slope:.4f}")
                 try:
                     with open(output_path, 'w') as f:
                         f.writelines(content)
