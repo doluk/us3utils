@@ -34,10 +34,3 @@ dependencies = [
 Homepage = "https://github.com/doluk/us3utils"
 Repository = "https://github.com/doluk/us3utils"
 Issues = "https://github.com/doluk/us3utils/issues"
-
-[build-system]
-requires = ["hatchling"]
-build-backend = "hatchling.build"
-
-[tool.uv]
-dev-dependencies = []
