@@ -136,7 +136,8 @@ def main():
             slope, result = process_ip_file(file_path, nth, output_dir)
             if slope is None:
                 continue
-
+            change = -200
+            change_prev = -200
             is_faulty = False
             # Check against previous two valid scans in THIS group
             if len(valid_slopes) >= 1:
@@ -154,7 +155,7 @@ def main():
                         is_faulty = True
 
             if is_faulty:
-                excluded_scans.append(file_path.name)
+                excluded_scans.append(file_path.name + f"{slope} {change} {change_prev}")
             else:
                 valid_slopes.append(slope)
                 # Save the file
