@@ -86,64 +86,73 @@ def main():
         output_dir.mkdir(parents=True)
 
     # Find all files matching *.IP or *.IPX where X is a cell number
-    # Cluster_packs uses .IPX where X is cell number.
-    # The requirement says matching *.IP. 
-    # Let's search for *.IP* and check if the name contains .IP
     all_files = list(input_dir.iterdir())
-    ip_files = sorted([f for f in all_files if f.is_file() and ('.IP' in f.suffix or '.IP' in f.name)])
+    ip_files = sorted([f for f in all_files if f.is_file() and ('.IP' in f.suffix.upper() or '.IP' in f.name.upper())])
 
     if not ip_files:
         print(f"No *.IP files found in {input_dir}")
         return
 
-    valid_slopes = []
+    # Group files by their cell suffix (e.g., .IP1, .IP2, or .IP if generic)
+    # The slope should only consider the same .ip* for the slope
+    file_groups = {}
+    for f in ip_files:
+        suffix = f.suffix.upper()
+        if suffix not in file_groups:
+            file_groups[suffix] = []
+        file_groups[suffix].append(f)
+
     excluded_scans = []
+    total_files_processed = 0
 
-    for file_path in ip_files:
-        slope, result = process_ip_file(file_path, nth, output_dir)
-        if slope is None:
-            continue
-
-        is_faulty = False
-        # "Compare the previous two valid scans and their respective fitted linear function 
-        # to the fitted linear function of the current scan. a change in the slop of more 
-        # than 5% makes the scan faulty and it should be excluded."
+    # Process each cell group independently
+    for suffix, group_files in sorted(file_groups.items()):
+        valid_slopes = []
+        # Sort files within the group to process scans in chronological order
+        group_files.sort()
         
-        # Check against previous two valid scans
-        if len(valid_slopes) >= 1:
-            # Check against the last valid scan
-            last_slope = valid_slopes[-1]
-            change = abs(slope - last_slope) / abs(last_slope) if last_slope != 0 else 0
-            if change > 0.05:
-                is_faulty = True
-            
-            # Check against the scan before that if it exists
-            if not is_faulty and len(valid_slopes) >= 2:
-                prev_slope = valid_slopes[-2]
-                change_prev = abs(slope - prev_slope) / abs(prev_slope) if prev_slope != 0 else 0
-                if change_prev > 0.05:
-                    is_faulty = True
+        for file_path in group_files:
+            total_files_processed += 1
+            slope, result = process_ip_file(file_path, nth, output_dir)
+            if slope is None:
+                continue
 
-        if is_faulty:
-            excluded_scans.append(file_path.name)
-        else:
-            valid_slopes.append(slope)
-            # Save the file
-            output_path, content = result
-            try:
-                with open(output_path, 'w') as f:
-                    f.writelines(content)
-            except Exception as e:
-                print(f"Error writing to {output_path}: {e}")
+            is_faulty = False
+            # Check against previous two valid scans in THIS group
+            if len(valid_slopes) >= 1:
+                # Check against the last valid scan
+                last_slope = valid_slopes[-1]
+                change = abs(slope - last_slope) / abs(last_slope) if last_slope != 0 else 0
+                if change > 0.05:
+                    is_faulty = True
+                
+                # Check against the scan before that if it exists
+                if not is_faulty and len(valid_slopes) >= 2:
+                    prev_slope = valid_slopes[-2]
+                    change_prev = abs(slope - prev_slope) / abs(prev_slope) if prev_slope != 0 else 0
+                    if change_prev > 0.05:
+                        is_faulty = True
+
+            if is_faulty:
+                excluded_scans.append(file_path.name)
+            else:
+                valid_slopes.append(slope)
+                # Save the file
+                output_path, content = result
+                try:
+                    with open(output_path, 'w') as f:
+                        f.writelines(content)
+                except Exception as e:
+                    print(f"Error writing to {output_path}: {e}")
 
     if excluded_scans:
-        print("\nExcluded scans (faulty due to slope change > 5%):")
+        print("\nExcluded scans (faulty due to slope change > 5% within same cell group):")
         for scan in excluded_scans:
             print(f"- {scan}")
     else:
         print("\nNo scans were excluded.")
 
-    print(f"\nProcessed {len(ip_files)} files. Results saved in {output_dir}")
+    print(f"\nProcessed {total_files_processed} files. Results saved in {output_dir}")
 
 if __name__ == '__main__':
     main()
